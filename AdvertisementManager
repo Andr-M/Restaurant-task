@@ -1,0 +1,143 @@
+package com.javarush.test.level27.lesson15.big01.ad;// Created on 09.03.2016.
+
+import com.javarush.test.level27.lesson15.big01.ConsoleHelper;
+import com.javarush.test.level27.lesson15.big01.statistic.StatisticEventManager;
+import com.javarush.test.level27.lesson15.big01.statistic.event.VideoSelectedEventDataRow;
+
+import java.util.*;
+
+public class AdvertisementManager {
+    private final AdvertisementStorage storage = AdvertisementStorage.getInstance();
+    private int timeSeconds;
+
+    public AdvertisementManager(int timeSeconds) {
+        this.timeSeconds = timeSeconds;
+    }
+
+    public void processVideos() throws NoVideoAvailableException {
+        List<Advertisement> videos = new ArrayList<>();
+        //Include only compatible by duration video
+        for (Advertisement x: storage.list()){
+            if (x.getHits() >=1)  // also could be added &&(x.getDuration <= timeSeconds)
+                videos.add(x);
+        }
+
+        if (videos.isEmpty()) throw new NoVideoAvailableException();
+
+        List<Advertisement> theBestVideos = bestVideo(powerSet(videos));
+        if (theBestVideos.isEmpty()) throw new NoVideoAvailableException();
+
+        Collections.sort(theBestVideos, new Comparator<Advertisement>() {
+            public int compare(Advertisement o1, Advertisement o2) {
+                long amountPerOneDisplaying1 = o1.getAmountPerOneDisplaying();
+                long amountPerOneDisplaying2 = o2.getAmountPerOneDisplaying();
+                long amountPerOneSecond1 = amountPerOneDisplaying1 * 1000 / o1.getDuration();
+                long amountPerOneSecond2 = amountPerOneDisplaying2 * 1000 / o2.getDuration();
+                int result = 0;
+                if (amountPerOneDisplaying1 > amountPerOneDisplaying2) result = -1;
+                if (amountPerOneDisplaying1 < amountPerOneDisplaying2) result = 1;
+
+                if (amountPerOneDisplaying1 == amountPerOneDisplaying2) {
+                    if (amountPerOneSecond1 > amountPerOneSecond2) result = 1;
+                    if (amountPerOneSecond1 < amountPerOneSecond2) result = -1;
+                }
+                return result;
+            }
+        });
+
+        int totalDurationTheBestVideos = 0;
+        long totalAmountTheBestVideos = 0;
+        for (Advertisement x: theBestVideos) {
+            totalDurationTheBestVideos += x.getDuration();
+            totalAmountTheBestVideos += x.getAmountPerOneDisplaying();
+        }
+
+        StatisticEventManager.getInstance().register(new VideoSelectedEventDataRow(theBestVideos, totalAmountTheBestVideos, totalDurationTheBestVideos));
+
+        for (Advertisement x: theBestVideos) {
+                ConsoleHelper.writeMessage(x.getName() +
+                        " is displaying... " +
+                        x.getAmountPerOneDisplaying() +
+                        ", " +
+                        (int)(x.getAmountPerOneDisplaying() * 1000 / x.getDuration())
+                );
+                x.revalidate();
+        }
+    }
+
+    private <Advertisement> List<List<Advertisement>> powerSet(List<Advertisement> videos){
+        List<List<Advertisement>> sets = new ArrayList<>();
+
+        if (videos.isEmpty()) {
+            sets.add(new ArrayList<Advertisement>());
+            return sets;
+        }
+
+        List<Advertisement> list = new ArrayList<>(videos);
+        Advertisement head = list.get(0);
+        List<Advertisement> rest = new ArrayList<>(list.subList(1, list.size()));
+
+        for (List<Advertisement> set: powerSet(rest)){
+            List<Advertisement> newSet = new ArrayList<>();
+            newSet.add(head);
+            newSet.addAll(set);
+            sets.add(newSet);
+            sets.add(set);
+        }
+        return sets;
+    }
+
+    private List<Advertisement> bestVideo(List<List<Advertisement>> powerSet){
+
+        for (Iterator<List<Advertisement>> iterator = powerSet.iterator(); iterator.hasNext(); ){
+            List<Advertisement> set = iterator.next();
+            int totalDuration = 0;
+            boolean isNullHits = false;
+
+            for (Advertisement v: set){
+                totalDuration += v.getDuration();
+                if (v.getHits() < 1) isNullHits = true;
+            }
+
+            if (totalDuration > timeSeconds || isNullHits) {
+                iterator.remove();
+            }
+        }
+
+        Collections.sort(powerSet, new Comparator<List<Advertisement>>() {
+            public int compare(List<Advertisement> o1, List<Advertisement> o2) {
+                int result = 0;
+                long amountPerOneDisplaying1 = 0;
+                int totalDuration1 = 0;
+                long amountPerOneDisplaying2 = 0;
+                int totalDuration2 = 0;
+
+                for (Advertisement v1: o1){
+                    amountPerOneDisplaying1 += v1.getAmountPerOneDisplaying();
+                    totalDuration1 += v1.getDuration();
+                }
+                for (Advertisement v2: o2){
+                    amountPerOneDisplaying2 += v2.getAmountPerOneDisplaying();
+                    totalDuration2 += v2.getDuration();
+                }
+
+                if (amountPerOneDisplaying1 > amountPerOneDisplaying2) result = -1;
+                if (amountPerOneDisplaying1 < amountPerOneDisplaying2) result = 1;
+                if (amountPerOneDisplaying1 == amountPerOneDisplaying2) {
+                    if (totalDuration1 > totalDuration2) result = -1;
+                    if (totalDuration1 < totalDuration2) result = 1;
+                    if (totalDuration1 == totalDuration2){
+                        if (o1.size() > o2.size()) result = 1;
+                        if (o1.size() < o2.size()) result = -1;
+                    }
+                }
+                return result;
+            }
+        });
+
+        return powerSet.get(0);
+    }
+
+
+}
+
