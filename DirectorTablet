@@ -1,0 +1,89 @@
+package com.javarush.test.level27.lesson15.big01;
+
+import com.javarush.test.level27.lesson15.big01.ad.Advertisement;
+import com.javarush.test.level27.lesson15.big01.ad.StatisticAdvertisementManager;
+import com.javarush.test.level27.lesson15.big01.statistic.StatisticEventManager;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+public class DirectorTablet {
+
+    public void printAdvertisementProfit(){
+
+        HashMap<String, Long> dailyAdProfit = new HashMap<>(StatisticEventManager.getInstance().dailyAdProfit());
+
+        Map<String, Long> sortedMap = new TreeMap<>(new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o2.compareTo(o1);
+            }
+        });
+        sortedMap.putAll(dailyAdProfit);
+
+        long totalAmount = 0;
+        for (Map.Entry<String, Long> x: sortedMap.entrySet()){
+            BigDecimal decimal = new BigDecimal(x.getValue()).divide(new BigDecimal("100")).setScale(2, BigDecimal.ROUND_HALF_UP);
+            ConsoleHelper.writeMessage(x.getKey() + " - " + decimal);
+
+            totalAmount += x.getValue();
+        }
+        BigDecimal decimalTotal = new BigDecimal(totalAmount);
+        decimalTotal = decimalTotal.divide(new BigDecimal("100")).setScale(2, BigDecimal.ROUND_HALF_UP);
+        ConsoleHelper.writeMessage("Total - " + decimalTotal);
+    }
+
+    public void printCookWorkloading(){
+
+        HashMap<String, HashMap<String, Integer>> cookWorkLoad = new HashMap<>(StatisticEventManager.getInstance().cookWorkLoad());
+
+        Map<String, HashMap<String, Integer>> sortedMap = new TreeMap<>(new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o2.compareTo(o1);
+            }
+        });
+        sortedMap.putAll(cookWorkLoad);
+
+        Map<String, Integer> sortedCookMap = new TreeMap<>(new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o1.compareTo(o2);
+            }
+        });
+
+        for (Map.Entry<String, HashMap<String, Integer>> x: sortedMap.entrySet()){
+            ConsoleHelper.writeMessage(x.getKey());
+            sortedCookMap.putAll(x.getValue());
+            for (Map.Entry<String, Integer> cooks: sortedCookMap.entrySet()){
+                ConsoleHelper.writeMessage(cooks.getKey() + " - " + Math.round(cooks.getValue() / 60) + " min");
+            }
+            sortedCookMap.clear();
+        }
+    }
+
+    public void printActiveVideoSet(){
+        ArrayList<Advertisement> activeVideoSet = new ArrayList<>(StatisticAdvertisementManager.getInstance().activeVideoSet());
+        Collections.sort(activeVideoSet, new Comparator<Advertisement>() {
+            @Override
+            public int compare(Advertisement o1, Advertisement o2) {
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        });
+
+        for (Advertisement x: activeVideoSet){
+            ConsoleHelper.writeMessage(x.getName() + " - " + x.getHits());
+        }
+    }
+
+    public void printArchivedVideoSet(){
+        ArrayList<Advertisement> archivedVideoSet = new ArrayList<>(StatisticAdvertisementManager.getInstance().archivedVideoSet());
+        Collections.sort(archivedVideoSet, new Comparator<Advertisement>() {
+            @Override
+            public int compare(Advertisement o1, Advertisement o2) {
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        });
+
+        for (Advertisement x: archivedVideoSet){
+            ConsoleHelper.writeMessage(x.getName());
+        }
+    }
+}
