@@ -1,0 +1,29 @@
+package com.javarush.test.level27.lesson15.big01.ad;// Created on 09.03.2016.
+
+import java.util.ArrayList;
+import java.util.List;
+
+class AdvertisementStorage {
+    private static AdvertisementStorage advertisementStorage = new AdvertisementStorage();
+    private final List<Advertisement> videos = new ArrayList<>();
+
+    public static AdvertisementStorage getInstance() {
+        return advertisementStorage;
+    }
+
+    private AdvertisementStorage() {
+        Object someContent = new Object();
+        videos.add(new Advertisement(someContent, "First Video", 5000, 100, 277)); //weight=277
+        videos.add(new Advertisement(someContent, "Second Video", 100, 10, 11)); //weight=11
+        videos.add(new Advertisement(someContent, "Third Video", 400, 2, 10));
+    }
+
+    public List<Advertisement> list() {
+        return videos;
+    }
+
+    public void add(Advertisement advertisement){
+        videos.add(advertisement);
+    }
+
+}
