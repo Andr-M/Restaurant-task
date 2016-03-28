@@ -1,0 +1,93 @@
+package com.javarush.test.level27.lesson15.big01.statistic;// Created on 14.03.2016.
+
+import com.javarush.test.level27.lesson15.big01.statistic.event.CookedOrderEventDataRow;
+import com.javarush.test.level27.lesson15.big01.statistic.event.EventDataRow;
+import com.javarush.test.level27.lesson15.big01.statistic.event.EventType;
+import com.javarush.test.level27.lesson15.big01.statistic.event.VideoSelectedEventDataRow;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public final class StatisticEventManager {
+    private static final StatisticEventManager statisticEventManager = new StatisticEventManager();
+    private StatisticStorage statisticStorage = new StatisticStorage();
+
+    public static StatisticEventManager getInstance(){
+        return statisticEventManager;
+    }
+
+    private StatisticEventManager(){}
+
+    public void register(EventDataRow data){
+        statisticStorage.put(data);
+    }
+
+    public HashMap<String, Long> dailyAdProfit(){
+        SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+        ArrayList<EventDataRow> videoSelected = new ArrayList<>(statisticStorage.get(EventType.SELECTED_VIDEOS));
+        HashMap<String, Long> dailyAdProfit = new HashMap<>();
+
+        for (EventDataRow x: videoSelected){
+            dailyAdProfit.put(df.format(x.getDate()), null);
+        }
+
+        for (Map.Entry<String, Long> m: dailyAdProfit.entrySet()) {
+            long sum = 0;
+            for (EventDataRow x : videoSelected) {
+                if (m.getKey().equals(df.format(x.getDate())) )
+                sum += ((VideoSelectedEventDataRow) x).getAmount();
+            }
+            dailyAdProfit.put(m.getKey(), sum);
+        }
+
+        return dailyAdProfit;
+    }
+
+    public HashMap<String, HashMap<String, Integer>> cookWorkLoad(){
+        SimpleDateFormat df = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+        HashMap<String, HashMap<String, Integer>> cookDataStatistic = new HashMap<>();
+        ArrayList<EventDataRow> cookedEvents = new ArrayList<>(statisticStorage.get(EventType.COOKED_ORDER));
+
+        for (EventDataRow x: cookedEvents){
+            cookDataStatistic.put(df.format(x.getDate()), null);
+        }
+
+        HashMap<String, Integer> cookWorkLoad = new HashMap<>();
+        for (Map.Entry<String, HashMap<String, Integer>> x: cookDataStatistic.entrySet()){
+            for (EventDataRow y: cookedEvents) {
+                if (x.getKey().equals(df.format(y.getDate())) ){
+                    int time = 0;
+                    for (EventDataRow z: cookedEvents) {
+                        if (df.format(z.getDate()).equals(df.format(y.getDate())) &&
+                                ((CookedOrderEventDataRow) z).getCookName().equals(((CookedOrderEventDataRow) y).getCookName()) )
+                            time += z.getTime();
+                    }
+                    cookWorkLoad.put(((CookedOrderEventDataRow) y).getCookName(), time);
+                }
+            }
+            cookDataStatistic.put(x.getKey(), new HashMap<>(cookWorkLoad));
+            cookWorkLoad.clear();
+        }
+
+        return cookDataStatistic;
+    }
+
+    private static class StatisticStorage {
+        private Map<EventType, List<EventDataRow>> eventTypeListMap;
+
+        private StatisticStorage() {
+            this.eventTypeListMap = new HashMap<>();
+            for (EventType x: EventType.values()) {
+                eventTypeListMap.put(x, new ArrayList<EventDataRow>());
+            }
+        }
+
+        private void put(EventDataRow data){
+            eventTypeListMap.get(data.getType()).add(data);
+        }
+
+        private List<EventDataRow> get(EventType eventType){
+            return eventTypeListMap.get(eventType);
+        }
+    }
+}
