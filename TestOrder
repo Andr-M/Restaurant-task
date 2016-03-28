@@ -1,0 +1,28 @@
+package com.javarush.test.level27.lesson15.big01.kitchen;// Created on 21.03.2016.
+
+import com.javarush.test.level27.lesson15.big01.Tablet;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class TestOrder extends Order {
+
+    public TestOrder(Tablet tablet) throws IOException {
+        super(tablet);
+    }
+
+    @Override
+    protected void initDishes() throws IOException {
+        List<Dish> randomDishes = new ArrayList<>(Arrays.asList(Dish.values()));
+        dishes = new ArrayList<>();
+        Collections.shuffle(randomDishes);
+        int numberOfDishes = (int) (Math.random() * randomDishes.size());
+        for (int i = 0; i <= numberOfDishes; i++) {
+            dishes.add(randomDishes.get(i));
+        }
+    }
+
+}
